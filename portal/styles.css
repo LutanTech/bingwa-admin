@@ -19,7 +19,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background-image: url(/assets/images/lp.webp);
+    background-image: url(/portal/lp.webp);
     background-attachment: fixed;
     background-position: center;
 }
