@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bingwa Sokoni | Admin Portal</title>
+    <link rel="stylesheet" href="styles.css">
+
+</head>
+<body>
+
+<header class="tour-header">
+    <span>ADMIN PORTAL | <span id="curr-yr">now</span></span>
+    <h1>Bingwa Sokoni</h1>
+    <span id="time"></span>
+</header>
+
+<div class="loader" id="main-loader">
+    <div class="loader-inner">
+        <div class="spinner"></div>
+        <p>Processing Neural Stream...</p>
+    </div>
+</div>
+
+<div class="layout-wrapper">
+    <main class="main-content">
+        <div id="plans-container">
+            <div class="spinner" style="margin: auto;"></div>
+            <p style="text-align: center; margin-top: 10px;">Accessing Market Data...</p>
+        </div>
+    </main>
+
+    <aside class="ad-section">
+        <div class="ad-card">
+            <h4>Announcement</h4>
+            <p class="promo-text">NOTIFICATIONS <br> POST OR VIEW</p>
+            <button class="btn-subscribe" style="margin-top: 20px; width: 80%;">Open Page</button>
+        </div>
+        <div class="ad-card" id="ad-2">
+            <h4>Sponsors</h4>
+            <p class="promo-text">ASHINDU SPORTS</p>
+        </div>
+    </aside>
+</div>
+
+<footer>
+    <div class="footer-grid">
+        <div class="footer-brand">
+            <h2>BINGWA</h2>
+            <p>Advanced market intelligence portal. Secure admin access only.</p>
+        </div>
+        <div class="footer-col">
+            <h4>Platform</h4>
+            <ul><li>Dashboard</li><li>Analytics</li><li>Settings</li></ul>
+        </div>
+        <div class="footer-col">
+            <h4>System</h4>
+            <ul><li>API Docs</li><li>Logs</li><li>Status</li></ul>
+        </div>
+
+    </div>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const baseUrl = window.location.origin.startsWith('https') ? 'https://bingwadeals.eu.pythonanywhere.com/' : 'http://127.0.0.1:5000';
+        document.querySelector('#curr-yr').textContent = new Date().getFullYear();
+
+        function getCookie(name) { 
+            const ca = document.cookie.split(';'); 
+            for (let c of ca) { c = c.trim(); if (c.startsWith(`${name}=`)) return c.substring(name.length + 1); } 
+            return null;
+        }
+
+        function showToast(type, msg) { 
+            const t = document.getElementById('toast'); 
+            t.className = `toast ${type}`;
+            t.innerHTML = `<span>${msg}</span>`; 
+            t.style.display = 'flex'; 
+            setTimeout(() => { t.style.display = 'none'; }, 5000); 
+        }
+
+        async function authAdmin() {
+            const uid = getCookie('id');
+            const token = getCookie('token');
+            if (!uid || !token) {
+                showToast('error', 'Authentication Required');
+                return false;
+            }
+            try {
+                const response = await fetch(`${baseUrl}/api/auth/admin?id=${uid}&token=${token}`);
+                const data = await response.json();
+                return data.status !== 'error';
+            } catch (err) {
+                return false;
+            }
+        }
+
+        async function loadPlans() {
+            const uid = getCookie('id');
+            const token = getCookie('token');
+            const container = document.getElementById('plans-container');
+
+            try {
+                const response = await fetch(`${baseUrl}/api/plans/admin?id=${uid}&token=${token}`);
+                const plans = await response.json();
+                container.innerHTML = '';
+                
+                plans.forEach(p => {
+                    const card = document.createElement('div');
+                    card.className = 'plan-card';
+                    card.innerHTML = `
+                        <div class="plan-details">
+                            <input value="${p.label}" id="label-${p.id}" placeholder="Plan Label">
+                            <div style="display:flex; gap:10px;">
+                                <select id="type-${p.id}">
+                                    <option ${p.type === 'data' ? 'selected' : ''} value='data'>Data</option>
+                                    <option ${p.type === 'voice' ? 'selected' : ''} value='voice'>Voice</option>
+                                    <option ${p.type === 'sms' ? 'selected' : ''} value='sms'>SMS</option>
+                                </select>
+                                <input type="number" value='${p.amount}' id="amount-${p.id}" style="width: 100px">
+                            </div>
+                        </div>
+                        <div class="plan-actions">
+                            <select id="status-${p.id}" class="${p.status === 'active' ? 'active' : 'inactive'}">
+                                <option value="active" ${p.status === 'active' ? 'selected' : ''}>ACTIVE</option>
+                                <option value="inactive" ${p.status !== 'active' ? 'selected' : ''}>INACTIVE</option>
+                            </select>
+                            <button class="btn-ticket" onclick="window.triggerUpdate('${p.id}')">SAVE</button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                container.innerHTML = `<p style="color:var(--status-red); text-align:center;">Local Node Offline</p>`;
+            }
+        }
+
+        window.triggerUpdate = async (id) => {
+            const label = document.getElementById(`label-${id}`).value;
+            const type = document.getElementById(`type-${id}`).value;
+            const amount = document.getElementById(`amount-${id}`).value;
+            const status = document.getElementById(`status-${id}`).value;
+            const uid = getCookie('id');
+            const token = getCookie('token');
+
+            try {
+                const response = await fetch(`${baseUrl}/update/plan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        data: { id, label, type, amount, status, udata: { id: uid, token } }
+                    })
+                });
+                const data = await response.json();
+                showToast(data.status, data.message);
+                if (data.status === 'success') {
+                    const el = document.getElementById(`status-${id}`);
+                    el.className = status === 'active' ? 'active' : 'inactive';
+
+                    loadPlans()
+                }
+            } catch (err) {
+                showToast('error', 'Update connection Interrupted');
+            }
+        };
+
+        const isAuthed = await authAdmin();
+        if (isAuthed) loadPlans();
+        else document.getElementById('plans-container').innerHTML = `<p style="text-align:center;">Auth token invalid or missing.</p>`;
+        
+        document.getElementById('time').textContent = `System: ${new Date().toLocaleTimeString()}`;
+    });
+</script>
+</body>
+</html>
