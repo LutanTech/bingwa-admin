@@ -69,13 +69,12 @@
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
         document.querySelector('#curr-yr').textContent = new Date().getFullYear();
-        
+
         async function authAdmin() {
             const uid = getCookie('id');
             const token = getCookie('token');
             if (!uid || !token) {
-                showToast('error', 'Authentication Required');
-                return false;
+                return window.location.href = "/";
             }
             try {
                 const response = await fetch(`${baseUrl}/api/auth/admin?id=${uid}&token=${token}`);
@@ -122,7 +121,7 @@
                     container.appendChild(card);
                 });
             } catch (err) {
-                container.innerHTML = `<p style="color:var(--status-red); text-align:center;">Local Node Offline</p>`;
+                container.innerHTML = `<p style="color:var(--status-red); text-align:center;">Server Offline</p>`;
             }
         }
 
@@ -157,9 +156,16 @@
 
         const isAuthed = await authAdmin();
         if (isAuthed) loadPlans();
-        else document.getElementById('plans-container').innerHTML = `<p style="text-align:center;">Auth token invalid or missing.</p>`;
+        else {
+            document.getElementById('plans-container').innerHTML = `<p style="text-align:center; color:red">Auth token invalid or missing.</p>`;
+            setTimeout(()=>{
+                window.location.href = '/'
+            }, 1000)
+        };
         
+        setInterval(() =>{
         document.getElementById('time').textContent = `System: ${new Date().toLocaleTimeString()}`;
+        }, 1000)
     });
 </script>
 </body>
