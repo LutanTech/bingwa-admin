@@ -135,28 +135,9 @@
 </div>
 
 <div id="toast" class="toast"></div>
+<script src="/assets/js/utils.js"></script>
 
 <script>
-    const baseUrl = window.location.origin.startsWith('https') ? 'https://bingwadeals.eu.pythonanywhere.com' : 'http://127.0.0.1:5000';
-
-    function setCookie(name, value, days) {
-        let expires = "";
-        if (days) {
-            const date = new Date();
-            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-            expires = "; expires=" + date.toUTCString();
-        }
-        document.cookie = name + "=" + (value || "") + expires + "; path=/";
-    }
-
-    function showToast(type, msg) {
-        const t = document.getElementById('toast');
-        t.className = `toast ${type}`;
-        t.textContent = msg;
-        t.style.display = 'block';
-        setTimeout(() => { t.style.display = 'none'; }, 5000);
-    }
-
     document.getElementById('login-btn').addEventListener('click', async () => {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
@@ -177,12 +158,12 @@
             const data = await response.json();
 
             if (data.status === 'success') {
-                const expiry = remember ? 30 : 1;
+                const expiry = remember ? 7 : 1;
                 setCookie('id', data.id, expiry);
                 setCookie('token', data.token, expiry);
                 
                 showToast('success', data.message);
-                setTimeout(() => { window.location.href = '/portal'; }, 10);
+                setTimeout(() => { window.location.href = '/portal'; }, 1000);
             } else {
                 showToast('error', data.message);
             }
@@ -190,6 +171,33 @@
             showToast('error', 'Neural link failed. Check local server.');
         }
     });
+
+    document.addEventListener('DOMContentLoaded', ()=>{
+        function silentLogin(){
+            const uid = getCookie('id')
+            const token = getCookie('token')
+            if(uid && token){
+            const payload = {
+                'id':uid,
+                'token':token
+            }
+            fetch(`${baseUrl}/api/auth/admin?id=${uid}&token=${token}`)
+            .then(r=>r.json())
+            .then(data=>{
+                if(data.status == 'success'){
+                    window.location.href = '/portal'
+                } else{
+                    showToast(data.status, data.message)
+                }
+            })
+        } else{
+            return
+        }
+        }
+
+        silentLogin()
+    })
+
 </script>
 
 </body>

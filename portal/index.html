@@ -62,28 +62,14 @@
 
     </div>
 </footer>
+<script src="/assets/js/utils.js"></script>
 
 <div id="toast" class="toast"></div>
 
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
-        const baseUrl = window.location.origin.startsWith('https') ? 'https://bingwadeals.eu.pythonanywhere.com' : 'http://127.0.0.1:5000';
         document.querySelector('#curr-yr').textContent = new Date().getFullYear();
-
-        function getCookie(name) { 
-            const ca = document.cookie.split(';'); 
-            for (let c of ca) { c = c.trim(); if (c.startsWith(`${name}=`)) return c.substring(name.length + 1); } 
-            return null;
-        }
-
-        function showToast(type, msg) { 
-            const t = document.getElementById('toast'); 
-            t.className = `toast ${type}`;
-            t.innerHTML = `<span>${msg}</span>`; 
-            t.style.display = 'flex'; 
-            setTimeout(() => { t.style.display = 'none'; }, 5000); 
-        }
-
+        
         async function authAdmin() {
             const uid = getCookie('id');
             const token = getCookie('token');
